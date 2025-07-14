@@ -1,13 +1,22 @@
-#include <math.h>
-#include <LiquidCrystal_I2C.h>
-#include <Keypad.h>
+// Advanced Calculator with LCD display and keypad input
+// Supports arithmetic, trigonometric, exponential, and logarithmic operations
+// Uses 4x4 keypad for input and 16x2 LCD for output
+// User controls: # = confirm entry, C = clear, D = backspace
 
+
+#include <math.h> // Include math library 
+#include <LiquidCrystal_I2C.h> // Import LCD library 
+#include <Keypad.h> // Import keypad library
+
+// LCD connected via I2C at address 0x27, 16 columns x 2 rows
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 String input = "";
 
+// 4x4 keypad configuration
 const byte ROWS = 4;
 const byte COLS = 4;
 
+// Keypad layout mapping
 char keys[ROWS][COLS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
@@ -15,35 +24,53 @@ char keys[ROWS][COLS] = {
   {'*', '0', '#', 'D'}
 };
 
-byte rowPins[ROWS] = {9, 8, 7, 6};
-byte colPins[COLS] = {5, 4, 3, 2};
+// Pin connections for keypad rows and columns
+byte rowPins[ROWS] = {9, 8, 7, 6};  // Connect to digital pins 9, 8, 7, 6
+byte colPins[COLS] = {5, 4, 3, 2};  // Connect to digital pins 5, 4, 3, 2
+
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
+// Display main menu and reset calculator to initial state
 void resetCalculator();
+
+// Get numeric input from keypad with validation
+// Returns: float value entered by user (# confirms input)
 float getNumberFromKeypad(const char* prompt);
+
+// Handle basic arithmetic operations (+, -, *, /)
 void arithmetic();
+
+// Handle trigonometric functions (sin, cos)
+// Note: Input angles must be in radians
 void trigonometric();
+
+// Calculate base raised to power using pow() function
 void exponential();
+
+
+// Calculate natural logarithm (ln) of input value
+// Note: Returns error for values <= 0 (undefined for ln)
 void logarithmic();
 
 void setup() {
-  lcd.init();
-  lcd.backlight();
-  resetCalculator();
+  lcd.init();        // Initialize LCD display
+  lcd.backlight();   // Turn on LCD backlight
+  resetCalculator(); // Show initial menu
 }
 
 void loop() {
   char key = keypad.getKey(); 
 
   if (key) {
+    // Menu selection: 1=arithmetic, 2=trig, 3=exponential, 4=logarithmic
     if (key == '1') arithmetic();
     else if (key == '2') trigonometric();
     else if (key == '3') exponential();
     else if (key == '4') logarithmic();
     else {
         lcd.setCursor(3, 0);
-        lcd.print("Error!");
+        lcd.print("Error!"); // Invalid menu selection
     }
   }
 }
@@ -69,6 +96,7 @@ float getNumberFromKeypad(const char* prompt) {
   lcd.setCursor(0, 0);
   lcd.print(prompt);
   
+  
   while (true) {
     char key = keypad.getKey();
     if (key) {
@@ -77,13 +105,14 @@ float getNumberFromKeypad(const char* prompt) {
         lcd.setCursor(0, 1);
         lcd.print(numInput);
       } else if (key == '#') {
-        return numInput.toFloat();
+        return numInput.toFloat();   // # key confirms number entry
       } else if (key == 'C') {
-        numInput = "";
+        numInput = "";               // C key clears current input
         lcd.setCursor(0, 1);
-        lcd.print("       ");
+        lcd.print("       ");        // Clear display line
       } else if (key == 'D' && numInput.length() > 0) {
-        numInput.remove(numInput.length() - 1);
+        numInput.remove(numInput.length() - 1);   // D key acts as backspace
+
         lcd.setCursor(0, 1);
         lcd.print("       ");
         lcd.setCursor(0, 1);
@@ -99,6 +128,7 @@ void arithmetic() {
   lcd.print("1:+ 2:- 3:* 4:/");
   
   char op;
+  // Wait for valid operation selection (1-4)
   while (true) {
     op = keypad.getKey();
     if (op >= '1' && op <= '4') break;
@@ -112,6 +142,7 @@ void arithmetic() {
     case '1': result = A + B; break;
     case '2': result = A - B; break;
     case '3': result = A * B; break;
+    // Check for division by zero to prevent undefined result
     case '4': result = (B != 0) ? A / B : NAN; break;
   }
 
@@ -132,6 +163,7 @@ void trigonometric() {
   lcd.print("1.Sin 2.Cos");
   
   char op;
+  // Wait for valid operation selection (1 or 2)
   while (true) {
     op = keypad.getKey();
     if (op == '1' || op == '2') break;
@@ -177,6 +209,6 @@ void logarithmic() {
     lcd.print("Error: Invalid");
   }
 
-  delay(3000);
+  delay(3500); // Display result for 3.5 seconds before returning to menu
   resetCalculator();
 }
